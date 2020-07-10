@@ -63,7 +63,7 @@ public:
 
 	//Vérifier si le mot donné appartient au dictionnaire
 	//On retourne true si le mot est dans le dictionnaire. Sinon, on retourne false.
-	bool appartient(const std::string &data);
+	bool appartient(const std::string &mot);
 
 	//Vérifier si le dictionnaire est vide
 	bool estVide() const;
@@ -137,27 +137,38 @@ private:
     
 	NoeudDictionnaire * racine;		// La racine de l'arbre des mots
     int cpt;						// Le nombre de mots dans le dictionnaire
+    const unsigned int SIMILITUDE_MAX = 1;
+    const double SIMILITUDE_MIN_POUR_SUGGESTION = 0.3; //correspond à 7 charactères à changer pour un mots de 10 lettres
+    const unsigned int NOMBRE_SUGGESTIONS = 5;
 
 
     //region private methods
 
-    void _deleteRecursive(NoeudDictionnaire*& arbre);
-    void _addRecursive(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit);
-    NoeudDictionnaire* _appartientRecursive(NoeudDictionnaire* const & node, const std::string &data);
+    void _deleteRecursif(NoeudDictionnaire*& arbre);
+    void _addRecursif(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit);
+    NoeudDictionnaire* _trouverRecursif(NoeudDictionnaire* const & node, const std::string &motAtrouver, double similitudeMinimum);
+    void _supprimerMotRecursif(NoeudDictionnaire*& node, const std::string &motAenlever);
+    NoeudDictionnaire* _noeudMinimalRecusrif(NoeudDictionnaire* const & node);
+
     bool _vecteurContient(const std::vector<std::string> &vecteur, const std::string& element);
     void _updateHauteurNoeud(NoeudDictionnaire*& node);
     int _hauteur(NoeudDictionnaire*& node);
     void _balancerUnNoeud(NoeudDictionnaire*& node);
+    bool baseEstPlustPetitQue(const std::string& base, const std::string& compare);
+    bool baseEstPlustGrandQue(const std::string& base, const std::string& compare);
+    bool possedeEnfantUnique(NoeudDictionnaire* const & node);
+    void _swapNodes(NoeudDictionnaire*& nodeBase, NoeudDictionnaire*& nodeToSwapTo);
+    unsigned int distanceLevenshtein(const std::string &mot1, const std::string &mot2);
 
     bool _debalancementAGauche(NoeudDictionnaire*& node);
     bool _debalancementADroite(NoeudDictionnaire*& node);
-    bool _sousArbrePencheAGauche(NoeudDictionnaire*& node);
-    bool _sousArbrePencheADroite(NoeudDictionnaire*& node);
+    bool _desequilibreSecondaireAGauche(NoeudDictionnaire*& node);
+    bool _desequilibreSecondaireADroite(NoeudDictionnaire*& node);
 
-    void _zigZagGauche(NoeudDictionnaire*& node);
-    void _zigZigGauche(NoeudDictionnaire*& node);
-    void _zigZagDroite(NoeudDictionnaire*& node);
-    void _zigZigDroite(NoeudDictionnaire*& node);
+    void _zigZagGauche(NoeudDictionnaire*& noeudCritique);
+    void _zigZigGauche(NoeudDictionnaire*& noeudCritique);
+    void _zigZagDroite(NoeudDictionnaire*& noeudCritique);
+    void _zigZigDroite(NoeudDictionnaire*& noeudCritique);
 
     //endregion
 };

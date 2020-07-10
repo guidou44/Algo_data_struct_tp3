@@ -93,64 +93,113 @@ namespace TP3
     }
 
     Dictionnaire::~Dictionnaire() {
-        _deleteRecursive(racine);
+        _deleteRecursif(racine);
     }
 
     void Dictionnaire::ajouteMot(const std::string &motOriginal, const std::string &motTraduit) {
 
-        _addRecursive(racine, motOriginal, motTraduit);
+        _addRecursif(racine, motOriginal, motTraduit);
     }
 
     void Dictionnaire::supprimeMot(const std::string &motOriginal) {
-        //Supprimer un mot et équilibrer l'arbre AVL
-        //Si le mot appartient au dictionnaire, on l'enlève et on équilibre. Sinon, on ne fait rien.
-        //Exception	logic_error si l'arbre est vide
-        //Exception	logic_error si le mot n'appartient pas au dictionnaire
+
+	    if (estVide())
+	        throw logic_error("arbre est vide");
+	    if (!appartient(motOriginal))
+	        throw logic_error("Impossible de supprimer un mot qui n'appartien pas au dictionnaire");
+        _supprimerMotRecursif(racine, motOriginal);
     }
 
     double Dictionnaire::similitude(const std::string &mot1, const std::string &mot2) {
-        //Quantifier la similitude entre 2 mots (dans le dictionnaire ou pas)
-        //Ici, 1 représente le fait que les 2 mots sont identiques, 0 représente le fait que les 2 mots sont complètements différents
-        //On retourne une valeur entre 0 et 1 quantifiant la similarité entre les 2 mots donnés
-        //Vous pouvez utiliser par exemple la distance de Levenshtein, mais ce n'est pas obligatoire !
-        return 0;
+	    if (mot1 == mot2)
+	        return 1;
+
+	    double minCharEdit = distanceLevenshtein(mot1, mot2);
+
+	    if (minCharEdit >= mot1.size()) //plus de charactère à éditer que la longueur du mot
+	        return 0;
+
+	    return 1 - minCharEdit/mot1.size();
+
+	}
+
+    unsigned int Dictionnaire::distanceLevenshtein(const std::string &mot1, const std::string &mot2) {
+        const size_t lengthMot1 = mot1.size();
+        const size_t lengthMot2 = mot2.size();
+
+        vector<vector<unsigned int>> distanceTable(lengthMot1 + 1, vector<unsigned int>(lengthMot2 + 1));
+        distanceTable[0][0] = 0;
+
+        for(unsigned int i = 1; i <= lengthMot1; i++)
+            distanceTable[i][0] = i;
+        for(unsigned int i = 1; i <= lengthMot2; i++)
+            distanceTable[0][i] = i;
+
+        for(unsigned int i = 1; i <= lengthMot1; i++)
+            for(unsigned int j = 1; j <= lengthMot2; j++) {
+                unsigned int dist1 = distanceTable[i - 1][j] + 1;
+                unsigned int dist2 = distanceTable[i][j - 1] + 1;
+                unsigned int dist3 = distanceTable[i - 1][j - 1] + (mot1[i - 1] == mot2[j - 1] ? 0 : 1);
+                distanceTable[i][j] = std::min(dist1, dist2, dist3);
+            }
+
+        return distanceTable[lengthMot1][lengthMot2];
     }
 
     std::vector<std::string> Dictionnaire::suggereCorrections(const std::string &motMalEcrit) {
-        //Suggère des corrections pour le mot motMalEcrit sous forme d'une liste de mots, dans un vector, à partir du dictionnaire
-        //S'il y a suffisament de mots, on redonne 5 corrections possibles au mot donné. Sinon, on en donne le plus possible
-        //Exception	logic_error si le dictionnaire est vide
-        return std::vector<std::string>();
+
+        if (estVide())
+            throw logic_error("arbre est vide");
+
+        vector<string> suggestions;
+
+        Dictionnaire::NoeudDictionnaire* suggestion = _trouverRecursif(racine, motMalEcrit, SIMILITUDE_MIN_POUR_SUGGESTION);
+        if (suggestion == nullptr)
+            return suggestions; //aucun mot respecte la similitude minimale
+
+        Dictionnaire::NoeudDictionnaire* suggestionDroite = suggestion->droite;
+        Dictionnaire::NoeudDictionnaire* suggestionGauche = suggestion->gauche;
+        suggestions.push_back(suggestion->mot);
+
+        while (suggestions.size() < 5 && (suggestionDroite != nullptr || suggestionGauche != nullptr)) {
+            suggestionDroite = _trouverRecursif(suggestionDroite, motMalEcrit, SIMILITUDE_MIN_POUR_SUGGESTION);
+            suggestionGauche = _trouverRecursif(suggestionGauche, motMalEcrit, SIMILITUDE_MIN_POUR_SUGGESTION);
+
+            if (suggestionDroite != nullptr)
+                suggestions.push_back(suggestionDroite->mot);
+            if (suggestionGauche != nullptr)
+                suggestions.push_back(suggestionGauche->mot);
+        }
+
+        return suggestions;
     }
 
     std::vector<std::string> Dictionnaire::traduit(const std::string &mot) {
-        //Trouver les traductions possibles d'un mot
-        //Si le mot appartient au dictionnaire, on retourne le vecteur des traductions du mot donné.
-        //Sinon, on retourne un vecteur vide
-        return std::vector<std::string>();
+        Dictionnaire::NoeudDictionnaire* noeud = _trouverRecursif(racine, mot, SIMILITUDE_MAX);
+        if (noeud == nullptr)
+            return vector<std::string>();
+        return noeud->traductions;
     }
 
-    bool Dictionnaire::appartient(const std::string &data) {
-        return _appartientRecursive(racine, data) != nullptr;
+    bool Dictionnaire::appartient(const std::string &mot) {
+        return _trouverRecursif(racine, mot, SIMILITUDE_MAX) != nullptr;
     }
 
     bool Dictionnaire::estVide() const {
         return racine == nullptr;
     }
 
-    //region private methods
-
-    void Dictionnaire::_deleteRecursive(Dictionnaire::NoeudDictionnaire *&arbre) {
+    void Dictionnaire::_deleteRecursif(Dictionnaire::NoeudDictionnaire *&arbre) {
 
         if (arbre != nullptr) {
-            _deleteRecursive(arbre->gauche);
-            _deleteRecursive(arbre->droite);
+            _deleteRecursif(arbre->gauche);
+            _deleteRecursif(arbre->droite);
             delete arbre;
             arbre = nullptr;
         }
     }
 
-    void Dictionnaire::_addRecursive(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit) {
+    void Dictionnaire::_addRecursif(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit) {
 
         if (node == nullptr) {
             node = new NoeudDictionnaire(motOriginal, motTraduit);
@@ -160,10 +209,10 @@ namespace TP3
             if (!_vecteurContient(node->traductions, motTraduit)) {
                 node->traductions.push_back(motTraduit);
             }
-        } else if (node->mot.compare(motOriginal) < 0) {
-            _addRecursive(node->droite, motOriginal, motTraduit);
+        } else if (baseEstPlustPetitQue(node->mot, motOriginal)) {
+            _addRecursif(node->droite, motOriginal, motTraduit);
         } else {
-            _addRecursive(node->gauche, motOriginal, motTraduit);
+            _addRecursif(node->gauche, motOriginal, motTraduit);
         }
 
         _updateHauteurNoeud(node);
@@ -171,16 +220,16 @@ namespace TP3
     }
 
     Dictionnaire::NoeudDictionnaire *
-    Dictionnaire::_appartientRecursive(Dictionnaire::NoeudDictionnaire* const &node, const std::string &data) {
+    Dictionnaire::_trouverRecursif(Dictionnaire::NoeudDictionnaire* const &node, const std::string &motAtrouver, const double similitudeMinimum) {
 	    if (node == nullptr)
             return nullptr;
-	    if (similitude(node->mot, data) == 1)
-	        return node;
+	    if (similitude(node->mot, motAtrouver) >= similitudeMinimum)
+	        return node;  //si ici similitudeMinimum est 1 (valeur max), alors les 2 mots sont le même mot.
 
-        if (node->mot > data) {
-            return _appartientRecursive(node->gauche, data);
+        if (node->mot > motAtrouver) {
+            return _trouverRecursif(node->gauche, motAtrouver, similitudeMinimum);
         } else {
-            return _appartientRecursive(node->droite, data);
+            return _trouverRecursif(node->droite, motAtrouver, similitudeMinimum);
         }
     }
 
@@ -212,55 +261,139 @@ namespace TP3
             return;
 
         if (_debalancementAGauche(node)) {
-            if (_sousArbrePencheADroite(node->gauche)) {
-                _zigZagGauche(node);
+            if (_desequilibreSecondaireADroite(node->gauche)) {
+                _zigZagGauche(node); //double rotation nécessaire
             } else {
-                _zigZigGauche(node);
+                _zigZigGauche(node); //simple rotation nécessaire
             }
         } else if (_debalancementADroite(node)) {
-            if (_sousArbrePencheAGauche(node->droite)) {
-                _zigZagDroite(node);
+            if (_desequilibreSecondaireAGauche(node->droite)) {
+                _zigZagDroite(node); //double rotation nécessaire
             } else {
-                _zigZigDroite(node);
+                _zigZigDroite(node); //simple rotation nécessaire
             }
         }
     }
 
     bool Dictionnaire::_debalancementAGauche(Dictionnaire::NoeudDictionnaire *&node) {
-        return false;
+	    if (node == nullptr)
+            return false;
+
+	    return _hauteur(node->gauche) - _hauteur(node->droite) >= 2;
     }
 
     bool Dictionnaire::_debalancementADroite(Dictionnaire::NoeudDictionnaire *&node) {
-        return false;
+        if (node == nullptr)
+            return false;
+
+        return _hauteur(node->droite) - _hauteur(node->gauche) >= 2;
     }
 
-    bool Dictionnaire::_sousArbrePencheAGauche(Dictionnaire::NoeudDictionnaire *&node) {
-        return false;
+    bool Dictionnaire::_desequilibreSecondaireAGauche(Dictionnaire::NoeudDictionnaire *&node) {
+        if (node == nullptr)
+            return false;
+
+        return _hauteur(node->gauche) > _hauteur(node->droite);
     }
 
-    bool Dictionnaire::_sousArbrePencheADroite(Dictionnaire::NoeudDictionnaire *&node) {
-        return false;
+    bool Dictionnaire::_desequilibreSecondaireADroite(Dictionnaire::NoeudDictionnaire *&node) {
+        if (node == nullptr)
+            return false;
+
+        return _hauteur(node->droite) > _hauteur(node->gauche);
     }
 
-    void Dictionnaire::_zigZagGauche(Dictionnaire::NoeudDictionnaire *&node) {
-
+    void Dictionnaire::_zigZagGauche(Dictionnaire::NoeudDictionnaire *&noeudCritique) {
+        _zigZigDroite(noeudCritique->gauche);
+        _zigZigGauche(noeudCritique);
     }
 
-    void Dictionnaire::_zigZigGauche(Dictionnaire::NoeudDictionnaire *&node) {
-
+    void Dictionnaire::_zigZagDroite(Dictionnaire::NoeudDictionnaire *&noeudCritique) {
+        _zigZigGauche(noeudCritique->droite);
+        _zigZigDroite(noeudCritique);
     }
 
-    void Dictionnaire::_zigZigDroite(Dictionnaire::NoeudDictionnaire *&node) {
+    void Dictionnaire::_zigZigGauche(Dictionnaire::NoeudDictionnaire *&noeudCritique) {
 
+	    Dictionnaire::NoeudDictionnaire* noeudCritiqueSecondaire = noeudCritique->gauche;
+        noeudCritique->gauche = noeudCritiqueSecondaire->droite;
+        noeudCritiqueSecondaire->droite = noeudCritique;
+
+        _updateHauteurNoeud(noeudCritique);
+        _updateHauteurNoeud(noeudCritiqueSecondaire);
+
+        noeudCritique = noeudCritiqueSecondaire;
     }
 
-    void Dictionnaire::_zigZagDroite(Dictionnaire::NoeudDictionnaire *&node) {
+    void Dictionnaire::_zigZigDroite(Dictionnaire::NoeudDictionnaire *&noeudCritique) {
 
+        Dictionnaire::NoeudDictionnaire* noeudCritiqueSecondaire = noeudCritique->droite;
+        noeudCritique->droite = noeudCritiqueSecondaire->gauche;
+        noeudCritiqueSecondaire->gauche = noeudCritique;
+
+        _updateHauteurNoeud(noeudCritique);
+        _updateHauteurNoeud(noeudCritiqueSecondaire);
+
+        noeudCritique = noeudCritiqueSecondaire;
     }
 
+    void Dictionnaire::_supprimerMotRecursif(Dictionnaire::NoeudDictionnaire *&node, const std::string &motAenlever) {
 
-    //endregion
+	    if (baseEstPlustPetitQue(node->mot, motAenlever)) {
+            _supprimerMotRecursif(node->droite, motAenlever);
+	    } else if (baseEstPlustGrandQue(node->mot, motAenlever)) {
+            _supprimerMotRecursif(node->gauche, motAenlever);
+        } else {
+	        //on est sur le noeud avec le mot à supprimer
+            if (_hauteur(node) == 0) {
+                //feuille
+                delete node;
+                node = nullptr;
+                cpt--;
+            } else if (possedeEnfantUnique(node)) {
+                if (node->gauche != nullptr) {
+                    _swapNodes(node, node->gauche);
+                    _supprimerMotRecursif(node->gauche, motAenlever);
+                } else {
+                    _swapNodes(node, node->droite);
+                    _supprimerMotRecursif(node->droite, motAenlever);
+                }
+            } else {
+                //2 enfants
+                Dictionnaire::NoeudDictionnaire* noeudMinSousArbreDroite = _noeudMinimalRecusrif(node->droite);
+                _swapNodes(node, noeudMinSousArbreDroite);
+            }
+        }
 
+        _updateHauteurNoeud(node);
+        _balancerUnNoeud(node);
+    }
 
-  
+    bool Dictionnaire::baseEstPlustPetitQue(const std::string &base, const std::string &compare) {
+        return base.compare(compare) < 0;
+    }
+
+    bool Dictionnaire::baseEstPlustGrandQue(const std::string &base, const std::string &compare) {
+        return base.compare(compare) > 0;
+    }
+
+    bool Dictionnaire::possedeEnfantUnique(NoeudDictionnaire* const & node) {
+	    bool enfantGauche = node->gauche != nullptr;
+	    bool enfantDroite = node->droite != nullptr;
+
+        return enfantGauche ^ enfantDroite;
+    }
+
+    Dictionnaire::NoeudDictionnaire* Dictionnaire::_noeudMinimalRecusrif(NoeudDictionnaire* const & node) {
+        if (node->gauche == nullptr) {
+            return node;
+        }
+        return _noeudMinimalRecusrif(node->gauche);
+    }
+
+    void Dictionnaire::_swapNodes(Dictionnaire::NoeudDictionnaire *&nodeBase, Dictionnaire::NoeudDictionnaire *&nodeToSwapTo) {
+        swap(nodeBase->mot, nodeToSwapTo->mot);
+        nodeBase->traductions.swap(nodeToSwapTo->traductions);
+    }
+
 }//Fin du namespace
