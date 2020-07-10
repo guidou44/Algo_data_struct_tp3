@@ -89,13 +89,25 @@ int main(int argc, char* argv[])
 			    }
 
                 int choix = 1;
-                cout << "Votre choix : ";
-                cin >> choix;
+
+                do
+                {
+                    cout << endl;
+                    cout << "Votre choix : ";
+                    cin >> choix;
+                    while (cin.fail())
+                    {
+                        cin.clear(); // clear input buffer to restore cin to a usable state
+                        cin.ignore(INT32_MAX, '\n'); // ignore last input
+                        cout << "Ce n'est pas un nombre!" << endl;
+                        cout << "Votre choix : ";
+                        cin >> choix;
+                    }
+                    if(choix < 1 || choix > suggestions.size())
+                        cout << "***Option invalide!***\n";
+                }while(choix < 1 || choix > suggestions.size());
                 cout << endl;
-                if (choix < 1 || choix > suggestions.size()) {
-                    cout << "choix invalide! 1 est pris par défaut." << endl;
-                    choix = 1;
-                }
+
                 motAnglais = suggestions[choix - 1];
 			}
 
@@ -112,15 +124,27 @@ int main(int argc, char* argv[])
                 cout << counter << ". " << traduction << endl;
                 counter++;
             }
-            int choix = 1;
-            cout << "Votre choix : ";
-            cin >> choix;
-            if (choix < 1 || choix > traductions.size()) {
-                cout << "choix invalide! 1 est pris par défaut." << endl;
-                choix = 1;
-            }
 
+            int choix = 1;
+
+            do
+            {
+                cout << endl;
+                cout << "Votre choix : ";
+                cin >> choix;
+                while (cin.fail())
+                {
+                    cin.clear(); // clear input buffer to restore cin to a usable state
+                    cin.ignore(INT32_MAX, '\n'); // ignore last input
+                    cout << "Ce n'est pas un nombre!" << endl;
+                    cout << "Votre choix : ";
+                    cin >> choix;
+                }
+                if(choix < 1 || choix > traductions.size())
+                    cout << "***Option invalide!***\n";
+            }while(choix < 1 || choix > traductions.size());
             cout << endl;
+
             motsFrancais.push_back(traductions[choix - 1]);
 		}
 
