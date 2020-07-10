@@ -144,8 +144,8 @@ private:
 
     //region private methods
 
-    void _deleteRecursif(NoeudDictionnaire*& arbre);
-    void _addRecursif(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit);
+    void _detruireRecursif(NoeudDictionnaire*& arbre);
+    void _ajouterRecursif(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit);
     NoeudDictionnaire* _trouverRecursif(NoeudDictionnaire* const & node, const std::string &motAtrouver, double similitudeMinimum);
     void _supprimerMotRecursif(NoeudDictionnaire*& node, const std::string &motAenlever);
     NoeudDictionnaire* _noeudMinimalRecusrif(NoeudDictionnaire* const & node);
@@ -154,11 +154,11 @@ private:
     void _updateHauteurNoeud(NoeudDictionnaire*& node);
     int _hauteur(NoeudDictionnaire*& node);
     void _balancerUnNoeud(NoeudDictionnaire*& node);
-    bool baseEstPlustPetitQue(const std::string& base, const std::string& compare);
-    bool baseEstPlustGrandQue(const std::string& base, const std::string& compare);
-    bool possedeEnfantUnique(NoeudDictionnaire* const & node);
+    bool _baseEstPlustPetitQue(const std::string& base, const std::string& compare);
+    bool _baseEstPlustGrandQue(const std::string& base, const std::string& compare);
+    bool _possedeEnfantUnique(NoeudDictionnaire* const & node);
     void _swapNodes(NoeudDictionnaire*& nodeBase, NoeudDictionnaire*& nodeToSwapTo);
-    unsigned int distanceLevenshtein(const std::string &mot1, const std::string &mot2);
+    unsigned int _distanceLevenshtein(const std::string &mot1, const std::string &mot2);
 
     bool _debalancementAGauche(NoeudDictionnaire*& node);
     bool _debalancementADroite(NoeudDictionnaire*& node);

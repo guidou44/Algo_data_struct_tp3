@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		//Initialisation d'un ditionnaire, avec le constructeur qui utilise un fstream
+		//Initialisation d'un dictionnaire, avec le constructeur qui utilise un fstream
 		Dictionnaire dictEnFr(englishFrench);
 		englishFrench.close();
 
@@ -70,10 +70,58 @@ int main(int argc, char* argv[])
 
 		vector<string> motsFrancais; //Vecteur qui contiendra les mots traduits en français
 
-		for (vector<string>::const_iterator i = motsAnglais.begin(); i != motsAnglais.end(); i++)
+		for (auto & motAnglais : motsAnglais)
 			// Itération dans les mots anglais de la phrase donnée
 		{
-			// À compléter ...
+			if (!dictEnFr.appartient(motAnglais)) {
+			    vector<string> suggestions = dictEnFr.suggereCorrections(motAnglais);
+			    if (suggestions.empty()) {
+                    cout << "aucune suggestion possible pour ce mot" << endl;
+                    motsFrancais.push_back("NON-TRADUISABLE");
+                    continue;
+			    }
+
+			    int suggCounter = 1;
+                cout << "Le mot '" << motAnglais << "' n'existe pas dans le dictionnaire. Veuillez choisir une des suggestions suivantes :" << endl;
+			    for (const string& suggestion : suggestions) {
+                    cout << suggCounter << ". " << suggestion << endl;
+                    suggCounter++;
+			    }
+
+                int choix = 1;
+                cout << "Votre choix : ";
+                cin >> choix;
+                cout << endl;
+                if (choix < 1 || choix > suggestions.size()) {
+                    cout << "choix invalide! 1 est pris par défaut." << endl;
+                    choix = 1;
+                }
+                motAnglais = suggestions[choix - 1];
+			}
+
+			vector<string> traductions = dictEnFr.traduit(motAnglais);
+
+			if (traductions.size() == 1) {
+			    motsFrancais.push_back(traductions[0]);
+			    continue;
+			}
+
+            int counter = 1;
+			cout << "Plusieurs traductions sont possibles pour le mot '" << motAnglais << "'. Veuillez en choisir une parmi les suivantes :" << endl;
+            for (const string& traduction : traductions) {
+                cout << counter << ". " << traduction << endl;
+                counter++;
+            }
+            int choix = 1;
+            cout << "Votre choix : ";
+            cin >> choix;
+            if (choix < 1 || choix > traductions.size()) {
+                cout << "choix invalide! 1 est pris par défaut." << endl;
+                choix = 1;
+            }
+
+            cout << endl;
+            motsFrancais.push_back(traductions[choix - 1]);
 		}
 
 		stringstream phraseFrancais; // On crée un string contenant la phrase,

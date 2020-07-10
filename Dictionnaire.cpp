@@ -93,12 +93,12 @@ namespace TP3
     }
 
     Dictionnaire::~Dictionnaire() {
-        _deleteRecursif(racine);
+        _detruireRecursif(racine);
     }
 
     void Dictionnaire::ajouteMot(const std::string &motOriginal, const std::string &motTraduit) {
 
-        _addRecursif(racine, motOriginal, motTraduit);
+        _ajouterRecursif(racine, motOriginal, motTraduit);
     }
 
     void Dictionnaire::supprimeMot(const std::string &motOriginal) {
@@ -114,7 +114,7 @@ namespace TP3
 	    if (mot1 == mot2)
 	        return 1;
 
-	    double minCharEdit = distanceLevenshtein(mot1, mot2);
+	    double minCharEdit = _distanceLevenshtein(mot1, mot2);
 
 	    if (minCharEdit >= mot1.size()) //plus de charactère à éditer que la longueur du mot
 	        return 0;
@@ -123,7 +123,7 @@ namespace TP3
 
 	}
 
-    unsigned int Dictionnaire::distanceLevenshtein(const std::string &mot1, const std::string &mot2) {
+    unsigned int Dictionnaire::_distanceLevenshtein(const std::string &mot1, const std::string &mot2) {
         const size_t lengthMot1 = mot1.size();
         const size_t lengthMot2 = mot2.size();
 
@@ -140,7 +140,7 @@ namespace TP3
                 unsigned int dist1 = distanceTable[i - 1][j] + 1;
                 unsigned int dist2 = distanceTable[i][j - 1] + 1;
                 unsigned int dist3 = distanceTable[i - 1][j - 1] + (mot1[i - 1] == mot2[j - 1] ? 0 : 1);
-                distanceTable[i][j] = std::min(dist1, dist2, dist3);
+                distanceTable[i][j] = min(min(dist1, dist2) , dist3);
             }
 
         return distanceTable[lengthMot1][lengthMot2];
@@ -152,23 +152,26 @@ namespace TP3
             throw logic_error("arbre est vide");
 
         vector<string> suggestions;
+        queue<Dictionnaire::NoeudDictionnaire*> noeudAtraite;
+        noeudAtraite.push(racine);
 
-        Dictionnaire::NoeudDictionnaire* suggestion = _trouverRecursif(racine, motMalEcrit, SIMILITUDE_MIN_POUR_SUGGESTION);
-        if (suggestion == nullptr)
-            return suggestions; //aucun mot respecte la similitude minimale
+        while (suggestions.size() < 5 && !noeudAtraite.empty()) {
+            Dictionnaire::NoeudDictionnaire* suggestion = _trouverRecursif(noeudAtraite.front(), motMalEcrit, SIMILITUDE_MIN_POUR_SUGGESTION);
+            if (suggestion != nullptr && !_vecteurContient(suggestions, suggestion->mot)) {
+                //ce mot n'a pas encore été mis dans le vecteur de suggestions
+                suggestions.push_back(suggestion->mot);
+            }
 
-        Dictionnaire::NoeudDictionnaire* suggestionDroite = suggestion->droite;
-        Dictionnaire::NoeudDictionnaire* suggestionGauche = suggestion->gauche;
-        suggestions.push_back(suggestion->mot);
+            if (suggestion != nullptr) {
+                //on ajoute ses enfants comme prochains noeuds à traiter
+                if (suggestion->droite != nullptr)
+                    noeudAtraite.push(suggestion->droite);
+                if (suggestion->gauche != nullptr)
+                    noeudAtraite.push(suggestion->gauche);
 
-        while (suggestions.size() < 5 && (suggestionDroite != nullptr || suggestionGauche != nullptr)) {
-            suggestionDroite = _trouverRecursif(suggestionDroite, motMalEcrit, SIMILITUDE_MIN_POUR_SUGGESTION);
-            suggestionGauche = _trouverRecursif(suggestionGauche, motMalEcrit, SIMILITUDE_MIN_POUR_SUGGESTION);
+            }
 
-            if (suggestionDroite != nullptr)
-                suggestions.push_back(suggestionDroite->mot);
-            if (suggestionGauche != nullptr)
-                suggestions.push_back(suggestionGauche->mot);
+            noeudAtraite.pop(); //on retire le noeud traité
         }
 
         return suggestions;
@@ -189,17 +192,17 @@ namespace TP3
         return racine == nullptr;
     }
 
-    void Dictionnaire::_deleteRecursif(Dictionnaire::NoeudDictionnaire *&arbre) {
+    void Dictionnaire::_detruireRecursif(Dictionnaire::NoeudDictionnaire *&arbre) {
 
         if (arbre != nullptr) {
-            _deleteRecursif(arbre->gauche);
-            _deleteRecursif(arbre->droite);
+            _detruireRecursif(arbre->gauche);
+            _detruireRecursif(arbre->droite);
             delete arbre;
             arbre = nullptr;
         }
     }
 
-    void Dictionnaire::_addRecursif(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit) {
+    void Dictionnaire::_ajouterRecursif(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit) {
 
         if (node == nullptr) {
             node = new NoeudDictionnaire(motOriginal, motTraduit);
@@ -209,10 +212,10 @@ namespace TP3
             if (!_vecteurContient(node->traductions, motTraduit)) {
                 node->traductions.push_back(motTraduit);
             }
-        } else if (baseEstPlustPetitQue(node->mot, motOriginal)) {
-            _addRecursif(node->droite, motOriginal, motTraduit);
+        } else if (_baseEstPlustPetitQue(node->mot, motOriginal)) {
+            _ajouterRecursif(node->droite, motOriginal, motTraduit);
         } else {
-            _addRecursif(node->gauche, motOriginal, motTraduit);
+            _ajouterRecursif(node->gauche, motOriginal, motTraduit);
         }
 
         _updateHauteurNoeud(node);
@@ -339,9 +342,9 @@ namespace TP3
 
     void Dictionnaire::_supprimerMotRecursif(Dictionnaire::NoeudDictionnaire *&node, const std::string &motAenlever) {
 
-	    if (baseEstPlustPetitQue(node->mot, motAenlever)) {
+	    if (_baseEstPlustPetitQue(node->mot, motAenlever)) {
             _supprimerMotRecursif(node->droite, motAenlever);
-	    } else if (baseEstPlustGrandQue(node->mot, motAenlever)) {
+	    } else if (_baseEstPlustGrandQue(node->mot, motAenlever)) {
             _supprimerMotRecursif(node->gauche, motAenlever);
         } else {
 	        //on est sur le noeud avec le mot à supprimer
@@ -350,7 +353,7 @@ namespace TP3
                 delete node;
                 node = nullptr;
                 cpt--;
-            } else if (possedeEnfantUnique(node)) {
+            } else if (_possedeEnfantUnique(node)) {
                 if (node->gauche != nullptr) {
                     _swapNodes(node, node->gauche);
                     _supprimerMotRecursif(node->gauche, motAenlever);
@@ -369,15 +372,15 @@ namespace TP3
         _balancerUnNoeud(node);
     }
 
-    bool Dictionnaire::baseEstPlustPetitQue(const std::string &base, const std::string &compare) {
+    bool Dictionnaire::_baseEstPlustPetitQue(const std::string &base, const std::string &compare) {
         return base.compare(compare) < 0;
     }
 
-    bool Dictionnaire::baseEstPlustGrandQue(const std::string &base, const std::string &compare) {
+    bool Dictionnaire::_baseEstPlustGrandQue(const std::string &base, const std::string &compare) {
         return base.compare(compare) > 0;
     }
 
-    bool Dictionnaire::possedeEnfantUnique(NoeudDictionnaire* const & node) {
+    bool Dictionnaire::_possedeEnfantUnique(NoeudDictionnaire* const & node) {
 	    bool enfantGauche = node->gauche != nullptr;
 	    bool enfantDroite = node->droite != nullptr;
 
