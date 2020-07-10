@@ -9,6 +9,8 @@
 
 #include "Dictionnaire.h"
 
+using namespace std;
+
 // Limite du nombre de suggestions
 #define LIMITE_SUGGESTIONS 5
 
@@ -86,6 +88,179 @@ namespace TP3
         }
 	}
 
-	// Complétez ici l'implémentation des autres méthodes demandées ainsi que vos méthodes privées.
+    Dictionnaire::Dictionnaire() : cpt(0), racine(nullptr) {
+
+    }
+
+    Dictionnaire::~Dictionnaire() {
+        _deleteRecursive(racine);
+    }
+
+    void Dictionnaire::ajouteMot(const std::string &motOriginal, const std::string &motTraduit) {
+
+        _addRecursive(racine, motOriginal, motTraduit);
+    }
+
+    void Dictionnaire::supprimeMot(const std::string &motOriginal) {
+        //Supprimer un mot et équilibrer l'arbre AVL
+        //Si le mot appartient au dictionnaire, on l'enlève et on équilibre. Sinon, on ne fait rien.
+        //Exception	logic_error si l'arbre est vide
+        //Exception	logic_error si le mot n'appartient pas au dictionnaire
+    }
+
+    double Dictionnaire::similitude(const std::string &mot1, const std::string &mot2) {
+        //Quantifier la similitude entre 2 mots (dans le dictionnaire ou pas)
+        //Ici, 1 représente le fait que les 2 mots sont identiques, 0 représente le fait que les 2 mots sont complètements différents
+        //On retourne une valeur entre 0 et 1 quantifiant la similarité entre les 2 mots donnés
+        //Vous pouvez utiliser par exemple la distance de Levenshtein, mais ce n'est pas obligatoire !
+        return 0;
+    }
+
+    std::vector<std::string> Dictionnaire::suggereCorrections(const std::string &motMalEcrit) {
+        //Suggère des corrections pour le mot motMalEcrit sous forme d'une liste de mots, dans un vector, à partir du dictionnaire
+        //S'il y a suffisament de mots, on redonne 5 corrections possibles au mot donné. Sinon, on en donne le plus possible
+        //Exception	logic_error si le dictionnaire est vide
+        return std::vector<std::string>();
+    }
+
+    std::vector<std::string> Dictionnaire::traduit(const std::string &mot) {
+        //Trouver les traductions possibles d'un mot
+        //Si le mot appartient au dictionnaire, on retourne le vecteur des traductions du mot donné.
+        //Sinon, on retourne un vecteur vide
+        return std::vector<std::string>();
+    }
+
+    bool Dictionnaire::appartient(const std::string &data) {
+        return _appartientRecursive(racine, data) != nullptr;
+    }
+
+    bool Dictionnaire::estVide() const {
+        return racine == nullptr;
+    }
+
+    //region private methods
+
+    void Dictionnaire::_deleteRecursive(Dictionnaire::NoeudDictionnaire *&arbre) {
+
+        if (arbre != nullptr) {
+            _deleteRecursive(arbre->gauche);
+            _deleteRecursive(arbre->droite);
+            delete arbre;
+            arbre = nullptr;
+        }
+    }
+
+    void Dictionnaire::_addRecursive(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit) {
+
+        if (node == nullptr) {
+            node = new NoeudDictionnaire(motOriginal, motTraduit);
+            cpt++;
+            return;
+        } else if (similitude(node->mot, motOriginal) == 1) {
+            if (!_vecteurContient(node->traductions, motTraduit)) {
+                node->traductions.push_back(motTraduit);
+            }
+        } else if (node->mot.compare(motOriginal) < 0) {
+            _addRecursive(node->droite, motOriginal, motTraduit);
+        } else {
+            _addRecursive(node->gauche, motOriginal, motTraduit);
+        }
+
+        _updateHauteurNoeud(node);
+        _balancerUnNoeud(node);
+    }
+
+    Dictionnaire::NoeudDictionnaire *
+    Dictionnaire::_appartientRecursive(Dictionnaire::NoeudDictionnaire* const &node, const std::string &data) {
+	    if (node == nullptr)
+            return nullptr;
+	    if (similitude(node->mot, data) == 1)
+	        return node;
+
+        if (node->mot > data) {
+            return _appartientRecursive(node->gauche, data);
+        } else {
+            return _appartientRecursive(node->droite, data);
+        }
+    }
+
+    bool Dictionnaire::_vecteurContient(const std::vector<std::string> &vecteur, const std::string& element) {
+        for (const auto & iter : vecteur) {
+            if (similitude(iter, element) == 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void Dictionnaire::_updateHauteurNoeud(Dictionnaire::NoeudDictionnaire *&node) {
+        if (node != nullptr) {
+            node->hauteur = 1 + max(_hauteur(node->gauche), _hauteur(node->droite));
+        }
+    }
+
+    int Dictionnaire::_hauteur(Dictionnaire::NoeudDictionnaire *&node) {
+        if (node == nullptr)
+            return -1;
+        return node->hauteur;
+    }
+
+    void Dictionnaire::_balancerUnNoeud(NoeudDictionnaire*& node) {
+
+        if (node == nullptr)
+            return;
+
+        if (_debalancementAGauche(node)) {
+            if (_sousArbrePencheADroite(node->gauche)) {
+                _zigZagGauche(node);
+            } else {
+                _zigZigGauche(node);
+            }
+        } else if (_debalancementADroite(node)) {
+            if (_sousArbrePencheAGauche(node->droite)) {
+                _zigZagDroite(node);
+            } else {
+                _zigZigDroite(node);
+            }
+        }
+    }
+
+    bool Dictionnaire::_debalancementAGauche(Dictionnaire::NoeudDictionnaire *&node) {
+        return false;
+    }
+
+    bool Dictionnaire::_debalancementADroite(Dictionnaire::NoeudDictionnaire *&node) {
+        return false;
+    }
+
+    bool Dictionnaire::_sousArbrePencheAGauche(Dictionnaire::NoeudDictionnaire *&node) {
+        return false;
+    }
+
+    bool Dictionnaire::_sousArbrePencheADroite(Dictionnaire::NoeudDictionnaire *&node) {
+        return false;
+    }
+
+    void Dictionnaire::_zigZagGauche(Dictionnaire::NoeudDictionnaire *&node) {
+
+    }
+
+    void Dictionnaire::_zigZigGauche(Dictionnaire::NoeudDictionnaire *&node) {
+
+    }
+
+    void Dictionnaire::_zigZigDroite(Dictionnaire::NoeudDictionnaire *&node) {
+
+    }
+
+    void Dictionnaire::_zigZagDroite(Dictionnaire::NoeudDictionnaire *&node) {
+
+    }
+
+
+    //endregion
+
+
   
 }//Fin du namespace

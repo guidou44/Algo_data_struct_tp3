@@ -30,7 +30,7 @@ public:
 
 	//Constructeur de dictionnaire à partir d'un fichier
 	//Le fichier doit être ouvert au préalable
-	Dictionnaire(std::ifstream &fichier);
+	explicit Dictionnaire(std::ifstream &fichier);
 
 	//Destructeur.
 	~Dictionnaire();
@@ -129,14 +129,37 @@ private:
 
 	    int hauteur;							// La hauteur de ce noeud (afin de maintenir l'équilibre de l'arbre AVL)
 
-		// Vous pouvez ajouter ici un contructeur de NoeudDictionnaire
+        explicit NoeudDictionnaire(const std::string& p_mot, const std::string& traduction) :
+                mot(p_mot), gauche(nullptr), droite(nullptr), hauteur(0), traductions() {
+            traductions.push_back(traduction);
+        }
 	};
     
 	NoeudDictionnaire * racine;		// La racine de l'arbre des mots
-    
     int cpt;						// Le nombre de mots dans le dictionnaire
 
-	//Vous pouvez ajouter autant de méthodes privées que vous voulez
+
+    //region private methods
+
+    void _deleteRecursive(NoeudDictionnaire*& arbre);
+    void _addRecursive(NoeudDictionnaire*& node, const std::string &motOriginal, const std::string &motTraduit);
+    NoeudDictionnaire* _appartientRecursive(NoeudDictionnaire* const & node, const std::string &data);
+    bool _vecteurContient(const std::vector<std::string> &vecteur, const std::string& element);
+    void _updateHauteurNoeud(NoeudDictionnaire*& node);
+    int _hauteur(NoeudDictionnaire*& node);
+    void _balancerUnNoeud(NoeudDictionnaire*& node);
+
+    bool _debalancementAGauche(NoeudDictionnaire*& node);
+    bool _debalancementADroite(NoeudDictionnaire*& node);
+    bool _sousArbrePencheAGauche(NoeudDictionnaire*& node);
+    bool _sousArbrePencheADroite(NoeudDictionnaire*& node);
+
+    void _zigZagGauche(NoeudDictionnaire*& node);
+    void _zigZigGauche(NoeudDictionnaire*& node);
+    void _zigZagDroite(NoeudDictionnaire*& node);
+    void _zigZigDroite(NoeudDictionnaire*& node);
+
+    //endregion
 };
     
 }
