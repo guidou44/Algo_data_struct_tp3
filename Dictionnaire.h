@@ -1,7 +1,7 @@
 /**
  * \file Dictionnaire.h
  * \brief Ce fichier contient l'interface d'un dictionnaire.
- * \author IFT-2008, Étudiant(e)
+ * \author IFT-2008, Guillaume Doucet
  * \version 0.1
  * \date juillet 2020
  *
@@ -17,10 +17,24 @@
 #include <vector>
 #include <queue>
 
+
+/**
+ * \namespace TP3
+ * \brief Espace de nom qui contient les classes du tp3.
+ */
 namespace TP3
 {
 
-//classe représentant un dictionnaire des synonymes
+/**
+ * \class Dictionnaire
+ * \brief classe représentant un dictionnaire de traductions sous forme d'un arbre AVL
+ *
+ *  Attributs:
+ *      - NoeudDictionnaire * racine, racine de l'arbre AVL
+        - int cpt, nombre de mot
+ *
+ */
+
 class Dictionnaire
 {
 public:
@@ -114,7 +128,18 @@ public:
 
 private:
 
-	// Classe interne représentant un noeud dans l'arbre AVL constituant le dictionnaire de traduction.
+    /**
+     * \class NoeudDictionnaire
+     * \brief Classe interne représentant un noeud dans l'arbre AVL constituant le dictionnaire de traduction.
+     *
+     *  Propriétés (accessible par dictionnaire):
+     * 	- mot : le mot contenus dans le noeud
+     * 	- traductions : les traductions possibles du mot
+     * 	- gauche : pointeur vers le noeud enfant gauche
+     * 	- droite : pointeur vers le noeud enfant droite
+     * 	- hauteur : hauteur du noeud dans l'arbre
+     *
+     */
 	class NoeudDictionnaire
 	{
 	public:
@@ -134,12 +159,19 @@ private:
             traductions.push_back(traduction);
         }
 	};
-    
-	NoeudDictionnaire * racine;		// La racine de l'arbre des mots
-    int cpt;						// Le nombre de mots dans le dictionnaire
-    const unsigned int SIMILITUDE_MAX = 1;
-    const double SIMILITUDE_MIN_POUR_SUGGESTION = 0.3; //correspond à 7 charactères à changer pour un mots de 10 lettres
-    const unsigned int NOMBRE_SUGGESTIONS = 5;
+
+    /**
+     * \var racine
+     * \brief La racine de l'arbre des mots contenus dans une instance de la classe privée NoeudDictionnaire
+     */
+	NoeudDictionnaire * racine;
+    /**
+     * \var cpt
+     * \brief Le nombre de mots dans le dictionnaire
+     */
+    int cpt;
+    const unsigned int SIMILITUDE_MAX = 1; //plus grande valeur de similutude possible
+    const double SIMILITUDE_MIN_POUR_SUGGESTION = 0.01; //similitude minimale acceptable
 
 
     //region private methods

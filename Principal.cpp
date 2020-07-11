@@ -1,7 +1,7 @@
 /**
  * \file Principal.cpp
  * \brief Fichier de chargement pour le dictionnaire, avec interface de traduction
- * \author IFT-2008, Étudiant(e)
+ * \author IFT-2008, Guillaume Doucet
  * \version 0.1
  * \date juillet 2020
  *
@@ -19,6 +19,7 @@ using namespace TP3;
 
 int main(int argc, char* argv[])
 {
+    const std::string NON_TRADUISABLE = "NON-TRADUISABLE";
 
 	try
 	{
@@ -77,7 +78,7 @@ int main(int argc, char* argv[])
 			    vector<string> suggestions = dictEnFr.suggereCorrections(motAnglais);
 			    if (suggestions.empty()) {
                     cout << "aucune suggestion possible pour ce mot" << endl;
-                    motsFrancais.push_back("NON-TRADUISABLE");
+                    motsFrancais.push_back(NON_TRADUISABLE);
                     continue;
 			    }
 
@@ -116,7 +117,11 @@ int main(int argc, char* argv[])
 			if (traductions.size() == 1) {
 			    motsFrancais.push_back(traductions[0]);
 			    continue;
+			} else if (traductions.size() == 0) {
+                motsFrancais.push_back(NON_TRADUISABLE);
+                continue;
 			}
+
 
             int counter = 1;
 			cout << "Plusieurs traductions sont possibles pour le mot '" << motAnglais << "'. Veuillez en choisir une parmi les suivantes :" << endl;
