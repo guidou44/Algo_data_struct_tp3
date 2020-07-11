@@ -171,7 +171,7 @@ private:
      */
     int cpt;
     const unsigned int SIMILITUDE_MAX = 1; //plus grande valeur de similutude possible
-    const double SIMILITUDE_MIN_POUR_SUGGESTION = 0.01; //similitude minimale acceptable
+    const double SIMILITUDE_MIN_POUR_SUGGESTION = 0.2; //similitude minimale acceptable
 
 
     //region private methods
