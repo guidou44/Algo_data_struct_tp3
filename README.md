@@ -1,2 +1,2 @@
 # Algo_data_struct_tp3
-Homework algorithm and data structure
+Homework 3 algorithm and data structure : English -> french traductor implemented using AVL tree
